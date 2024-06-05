@@ -31,8 +31,6 @@ int delaytime = 5;
 int minute = 0;
 int seconds = 0;
 
-   
-
 class UniqueCounter {
 public:
   static UniqueCounter& getInstance() {
@@ -63,27 +61,6 @@ private:
     
   };
 };
-
-
-float UniqueCounter::getAVGDist(int sampleCount) {
-    float sampleAVG = 0.0f;
-
-    sampleAVG = 0.0f;
-    for (int i = 0; i < sampleCount; i++)
-      sampleAVG += measureDistance() / sampleCount;
-
-    return sampleAVG;
-  }
-
-float UniqueCounter::measureDistance() {
-  digitalWrite(TRIG, LOW);
-  delay(2);
-  digitalWrite(TRIG, HIGH);
-  delay(10);
-  digitalWrite(TRIG, LOW);
-
-  return 340 * pulseIn(ECHO, HIGH) / 20000;
-}
 
 void setup() {
   pinMode(TRIG, OUTPUT);
