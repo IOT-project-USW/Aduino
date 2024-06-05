@@ -22,6 +22,16 @@ String device_name = "ESP32-BT-Slave";
 BluetoothSerial SerialBT;
 int TRIG = 0;
 int ECHO = 2;
+int pos_pins[] = {8,11,12,7}; // 몇번째 세그먼트
+int num_of_pos = 4;
+int pins[] = {9,13,5,3,2,10,6,4}; // 세그먼트 a, b, c, d, e, f, g, dp
+int num_of_pins = 8;
+int delaytime = 5;
+
+int minute = 0;
+int seconds = 0;
+
+   
 
 class UniqueCounter {
 public:
@@ -37,7 +47,23 @@ private:
   UniqueCounter& operator=(const UniqueCounter& ref) {};
 
   float measureDistance();
+  void segment(int min){
+     bool segment[10][8] = {
+      {true, true, true, true, true, true, false, false}, //0
+      {false, true, true, false, false, false, false, false}, //1
+      {true, true, false, true, true, false, true, false}, //2
+      {true, true, true, true, false, false, true, false}, //3
+      {false, true, true, false, false, true, true, false}, //4
+      {true, false, true, true, false, true, true, false}, //5
+      {true, false, true, true, true, true, true, false}, //6
+      {true, true, true, false, false, false, false, false}, //7
+      {true, true, true, true, true, true, true, false}, //8
+      {true, true, true, true, false, true, true, false} //9
+    };
+    
+  };
 };
+
 
 float UniqueCounter::getAVGDist(int sampleCount) {
     float sampleAVG = 0.0f;
