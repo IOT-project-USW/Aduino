@@ -47,6 +47,15 @@ void UniqueCounter::beep(int freq) {
 }
   
 bool UniqueCounter::checkPushup() {
+  if (distance >= 30) {
+    if (userPushupState != EPushupState::DOWN)
+      return false;
+    userPushupState = EPushupState::UP;
+    return true;
+  }
+  else if(distance <= 15){
+    userPushupState = EPushupState::DOWN;
+  }
   return false;
 }
 
@@ -57,6 +66,7 @@ void UniqueCounter::increaseCount() {
 void UniqueCounter::segmentOutput(){
   static int prevMin = 0;
   static int prevSec = 0;
+  static int prevCount = 0;
 
   segmentOutputPos(7, 0, ":");
   if (prevMin != timeLeftInMilli/1000/60) {
@@ -68,6 +78,12 @@ void UniqueCounter::segmentOutput(){
     prevSec = (timeLeftInMilli/1000)%60;
     segmentOutputPos(8, 0, "  ");
     segmentOutputPos(8, 0, (int)((timeLeftInMilli/1000)%60));
+  }
+  if (prevCount != count) {
+    prevCount = count;
+    segmentOutputPos(4, 1, "count:");
+    segmentOutputPos(10, 1, "    ");
+    segmentOutputPos(10, 1, count);
   }
 };
 
@@ -109,5 +125,6 @@ float UniqueCounter::measureDistance() {
   delay(10); //측정의 정확도 때문에 어쩔수 없이 사용
   digitalWrite(trigPin, LOW);
 
-  return 340 * pulseIn(echoPin, HIGH) / 20000;
+  distance = 340 * pulseIn(echoPin, HIGH) / 20000;
+  return distance;
 }

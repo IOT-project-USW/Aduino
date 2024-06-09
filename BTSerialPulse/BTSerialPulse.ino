@@ -53,11 +53,13 @@ void loop() {
       }
       break;
   case EUniqueCounterState::MEASURING:
-      //float distance = counter.getAVGDist();
       counter.updateTimer();
+      Serial.println(counter.getAVGDist());
       if (counter.checkPushup()) {
         counter.increaseCount();
         counter.beep(261);
+        delay(200);
+        counter.beep(0);
       }
       if (counter.isCompleted()){
         counter.setState(EUniqueCounterState::COMPLETED);

@@ -51,6 +51,7 @@ private:
   UniqueCounter(int trig, int echo, int startBtn, int SPK) {
     state = EUniqueCounterState::IDLE;
     count = 0;
+    distance = 0;
     timeLimitInMin = 2 * 60 * 1000;
     timeLimitInMilli = 2 * 60 * 1000;
     timeLeftInMilli = 2 * 60 * 1000;
@@ -85,6 +86,7 @@ private:
   uint32_t startTime;
   int count;
   EUniqueCounterState state;
+  int distance;
   int trigPin;
   int echoPin;
   int startBtnPin;
