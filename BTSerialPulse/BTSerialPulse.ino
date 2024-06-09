@@ -5,84 +5,69 @@
 // and also demonstrate that SerialBT have the same functionalities of a normal Serial
 // Note: Pairing is authenticated automatically by this device
 
-#include "BluetoothSerial.h"
+#include "UniqueCounter.h"
 
-String device_name = "ESP32-BT-Slave";
-
-// Check if Bluetooth is available
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
-#endif
-
-// Check Serial Port Profile
-#if !defined(CONFIG_BT_SPP_ENABLED)
-#error Serial Port Profile for Bluetooth is not available or not enabled. It is only available for the ESP32 chip.
-#endif
-
-BluetoothSerial SerialBT;
 int TRIG = 0;
-int ECHO = 2;
-int pos_pins[] = {8,11,12,7}; // 몇번째 세그먼트
-int num_of_pos = 4;
-int pins[] = {9,13,5,3,2,10,6,4}; // 세그먼트 a, b, c, d, e, f, g, dp
-int num_of_pins = 8;
-int delaytime = 5;
-
-int minute = 0;
-int seconds = 0;
-
-class UniqueCounter {
-public:
-  static UniqueCounter& getInstance() {
-    static UniqueCounter s;
-    return s;
-  }
-  float getAVGDist(int sampleCount);
-private:
-  UniqueCounter() {};
-  ~UniqueCounter() {};
-  UniqueCounter(const UniqueCounter& ref) {};
-  UniqueCounter& operator=(const UniqueCounter& ref) {};
-
-  float measureDistance();
-  void segment(int min){
-     bool segment[10][8] = {
-      {true, true, true, true, true, true, false, false}, //0
-      {false, true, true, false, false, false, false, false}, //1
-      {true, true, false, true, true, false, true, false}, //2
-      {true, true, true, true, false, false, true, false}, //3
-      {false, true, true, false, false, true, true, false}, //4
-      {true, false, true, true, false, true, true, false}, //5
-      {true, false, true, true, true, true, true, false}, //6
-      {true, true, true, false, false, false, false, false}, //7
-      {true, true, true, true, true, true, true, false}, //8
-      {true, true, true, true, false, true, true, false} //9
-    };
-    
-  };
-};
+int ECHO = 26;
+int START_BTN = 27;
+int SPK = 13;
+// int LCD_SDA = 22;
+// int LCD_SCL = 23;
+// int _CONN_PINS[12] = { 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19 }; // 12 11 10 9 8 7 1 2 3 4 5 6
+// int DIGIT_SELECT[4] = { 2, 5, 12, 19 };
+// int SEG_PINS[8] = { 3, 13, 17, 15, 14, 4, 18, 16 };
 
 void setup() {
   pinMode(TRIG, OUTPUT);
   pinMode(ECHO, INPUT);
 
-  Serial.begin(115200);
-  SerialBT.begin(device_name);  //Bluetooth device name
-  //SerialBT.deleteAllBondedDevices(); // Uncomment this to delete paired devices; Must be called after begin
-  Serial.printf("The device with name \"%s\" is started.\nNow you can pair it with Bluetooth!\n", device_name.c_str());
+  pinMode(START_BTN, INPUT);
+
+  UniqueCounter::getInstance(TRIG, ECHO, START_BTN, SPK);
 }
 
 void loop() {
-  UniqueCounter& counter = UniqueCounter::getInstance();
-  float distance = counter.getAVGDist(3);
-  if (Serial.available()) {
-    Serial.print("Distance:");
-    Serial.print(distance);
-    Serial.println(" cm");
+  UniqueCounter& counter = UniqueCounter::getInstance(TRIG, ECHO, START_BTN, SPK);
+
+  switch (counter.getState()) {
+  case EUniqueCounterState::IDLE:
+      if (digitalRead(START_BTN) == HIGH) {
+        counter.setState(EUniqueCounterState::MEASURING);
+        counter.lcd->clear();
+        counter.beep(261);
+        counter.segmentOutputPos(7, 0, 2);
+        delay(200);
+        counter.beep(0);
+        delay(800);
+        counter.beep(261);
+        counter.segmentOutputPos(7, 0, 1);
+        delay(200);
+        counter.beep(0);
+        delay(800);
+        counter.beep(261);
+        counter.segmentOutputPos(5, 0, "Start!");
+        counter.setTimer(2);
+        delay(1000);
+        counter.beep(0);
+        counter.lcd->clear();
+      }
+      break;
+  case EUniqueCounterState::MEASURING:
+      //float distance = counter.getAVGDist();
+      counter.updateTimer();
+      if (counter.checkPushup()) {
+        counter.increaseCount();
+        counter.beep(261);
+      }
+      if (counter.isCompleted()){
+        counter.setState(EUniqueCounterState::COMPLETED);
+        Serial.println("ChState.");
+      }
+      break;
+  case EUniqueCounterState::COMPLETED:
+      counter.sendMeasurementData();
+      counter.setState(EUniqueCounterState::IDLE);
+      break;
   }
-  if (SerialBT.available()) {
-    SerialBT.print("Distance:");
-    SerialBT.print(distance);
-    SerialBT.println(" cm");
-  }
+  counter.segmentOutput();
 }
